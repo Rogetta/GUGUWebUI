@@ -288,10 +288,16 @@ def __get_help_message():
     # 初始化 tls.json 配置
 def init_tls():    
     try:
-        tls_config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'guguwebui', 'tls.json')
-        with open(tls_config_path, 'r', encoding='utf-8') as f:
-            tls_config = json.load(f)
-        server.logger.info('[GUGUWebUI] tls.json 配置加载成功')
+        tls_config_path = os.path.join('config', 'guguwebui', 'tls.json')
+        if os.path.exists(tls_config_path):
+            with open(tls_config_path, 'r', encoding='utf-8') as f:
+                tls_config = json.load(f)
+            plugin_config.update(tls_config)
+            server.logger.info('[GUGUWebUI] 成功加载 tls.json 配置')
+        else:
+            server.logger.warning('[GUGUWebUI] 未找到 tls.json 配置文件')
+    except Exception as e:
+        server.logger.error(f'[GUGUWebUI] 加载 tls.json 配置时出错: {e}')
          # 可以在这里将 tls_config 合并到原有的配置中
         plugin_config.update(tls_config)
           # 例如更新 SSL 相关配置
