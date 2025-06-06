@@ -3,6 +3,7 @@ import platform
 
 from mcdreforged.api.command import *
 from mcdreforged.api.types import PluginServerInterface
+import json
 
 # 全局变量声明
 web_server_interface = None
@@ -283,3 +284,26 @@ def __get_help_message():
     help_message += "!!webui change <account> <old password> <new password>: 修改 guguwebui 账户密码\n"   
     help_message += "!!webui temp: 获取 guguwebui 临时密码\n"
     return help_message
+
+    # 初始化 tls.json 配置
+def init_tls():    
+    try:
+        tls_config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'guguwebui', 'tls.json')
+        with open(tls_config_path, 'r', encoding='utf-8') as f:
+            tls_config = json.load(f)
+        server.logger.info('[GUGUWebUI] tls.json 配置加载成功')
+         # 可以在这里将 tls_config 合并到原有的配置中
+        plugin_config.update(tls_config)
+          # 例如更新 SSL 相关配置
+        if 'ssl_enabled' in tls_config:
+            ssl_enabled = tls_config['ssl_enabled']
+        if 'ssl_keyfile' in tls_config:
+            ssl_keyfile = tls_config['ssl_keyfile']
+        if 'ssl_certfile' in tls_config:
+            ssl_certfile = tls_config['ssl_certfile']
+        if 'ssl_keyfile_password' in tls_config:
+            ssl_keyfile_password = tls_config['ssl_keyfile_password']
+    except FileNotFoundError:
+        server.logger.error('[GUGUWebUI] 未找到 tls.json 配置文件')
+    except json.JSONDecodeError:
+        server.logger.error('[GUGUWebUI] tls.json 配置文件解析失败')

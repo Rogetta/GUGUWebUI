@@ -63,6 +63,44 @@ def init_app(server_instance):
     """初始化应用程序，注册事件监听器"""
     global log_watcher
     
+     # 加载HTTPS总开关（来自config.json）
+    main_config = server_instance.load_config_simple("config.json", DEFALUT_CONFIG, echo_in_console=False)
+    https_enabled = main_config.get("https_enabled", False)
+
+    # 加载TLS具体配置（来自config/guguwebui/tls.json）
+    tls_config_path = os.path.join(server_instance.get_data_folder(), "config", "guguwebui", "tls.json")
+    try:
+        with open(tls_config_path, "r", encoding="utf-8") as f:
+            tls_config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        tls_config = {}
+        server_instance.logger.warning(f"TLS配置文件不存在或格式错误：{tls_config_path}")
+
+    # 构造证书路径（固定存储在config/guguwebui/cert/目录）
+    cert_dir = os.path.join(server_instance.get_data_folder(), "config", "guguwebui", "cert")
+    ssl_cert_path = os.path.join(cert_dir, tls_config.get("ssl_cert_file", "server.crt"))
+    ssl_key_path = os.path.join(cert_dir, tls_config.get("ssl_key_file", "server.key"))
+
+    # 配置HTTPS参数
+    ssl_args = {}
+    if https_enabled:
+        if os.path.exists(ssl_cert_path) and os.path.exists(ssl_key_path):
+            ssl_args = {
+                "ssl_keyfile": ssl_key_path,
+                "ssl_certfile": ssl_cert_path
+            }
+            server_instance.logger.info(f"HTTPS已启用，使用证书：{ssl_cert_path}")
+            server_instance.logger.info(f"HTTPS已启用，使用密钥：{ssl_key_path}")
+
+
+        else:
+            server_instance.logger.warning(f"HTTPS启用但证书文件不存在（证书路径：{ssl_cert_path}，密钥路径：{ssl_key_path}），将使用HTTP")
+    else:
+        server_instance.logger.info("HTTPS未启用，使用HTTP")
+
+    # 启动服务器时应用SSL配置（假设原启动代码在此处，需根据实际启动方式调整）
+    # 示例：uvicorn.run(app, host=host, port=port, **ssl_args)
+    
     # 存储服务器接口
     app.state.server_interface = server_instance
     
